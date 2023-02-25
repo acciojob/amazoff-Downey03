@@ -44,7 +44,9 @@ public class OrderRepository {
         return partners.get(partnerId);
     }
     public Integer getOrderCountByPartnerId(String Id){
-       return partners.get(Id).getNumberOfOrders();
+
+       //return partners.get(Id).getNumberOfOrders();
+        return pairs.get(Id).size();
     }
     public List<String> getOrdersByPartnerId(String Id){
         List<String> orderss = new ArrayList<>();
