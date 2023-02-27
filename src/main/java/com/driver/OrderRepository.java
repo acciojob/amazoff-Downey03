@@ -11,11 +11,13 @@ import java.util.Map;
 public class OrderRepository {
     Map<String,Order> orders ;
     Map<String,DeliveryPartner> partners;
-    Map<String,List<Order>> pairs;
+    Map<String,String> paired;
+    Map<String,List<String>> pairs;
     OrderRepository(){
         this.orders = new HashMap<>();
         this.pairs = new HashMap<>();
         this.partners = new HashMap<>();
+        this.paired = new HashMap<>();
     }
     public void addOrder(Order order){
         orders.put(order.getId(),order);
@@ -25,13 +27,15 @@ public class OrderRepository {
         partners.put(partner,new DeliveryPartner(partner));
     }
     public void addOrderPartnerPair(String orderId,String partnerId){
-        if(pairs.containsKey(partnerId)){
-            pairs.get(partnerId).add(orders.get(orderId));
-        }
-        else{
-            List<Order> newOrder = new ArrayList<>();
-            newOrder.add(orders.get(orderId));
-            pairs.put(partnerId,newOrder);
+        if(orders.containsKey(orderId) && partners.containsKey(partnerId)){
+            paired.put(orderId,partnerId);
+            if(pairs.containsKey(partnerId)){
+                pairs.get(partnerId).add(orderId);
+            }else{
+                List<String> newOrder = new ArrayList<>();
+                newOrder.add(orderId);
+                pairs.put(partnerId,newOrder);
+            }
         }
         partners.get(partnerId).setNumberOfOrders(pairs.get(partnerId).size());
     }
@@ -50,8 +54,8 @@ public class OrderRepository {
     }
     public List<String> getOrdersByPartnerId(String Id){
         List<String> orderss = new ArrayList<>();
-        for(Order order : pairs.get(Id)){
-            orderss.add(order.getId());
+        for(String order: pairs.get(Id)){
+            orderss.add(order);
         }
         return orderss;
     }
@@ -63,27 +67,35 @@ public class OrderRepository {
         return orderss;
     }
     public Integer getCountOfUnassignedOrder(){
-        int cnt=0;
-        for (String id: pairs.keySet()) {
-            cnt+= pairs.get(id).size();
-        }
-        return orders.size()-cnt;
+        return orders.size()-paired.size();
     }
     public Integer getOrdersLeftAfterGivenTimeByPartnerId(String time , String parthnerId){
         int cnt=0;
         String[] timeSTR=time.split(":");
         int Time = (Integer.valueOf(timeSTR[0])*60) * Integer.valueOf(timeSTR[1]);
-        for(Order order: pairs.get(parthnerId)){
-            if(order.getDeliveryTime()>Time) cnt++;
+        for(String order: pairs.get(parthnerId)){
+            if(orders.get(order).getDeliveryTime()>Time) cnt++;
         }
         return cnt;
     }
     public String getLastDeliveryTimeByPartnerId(String parthnerId){
-        return String.valueOf(pairs.get(parthnerId).get(pairs.get(parthnerId).size()-1).getDeliveryTime());
+        int max=0;
+        for(String order : pairs.get(parthnerId)){
+            max = Math.max(max , orders.get(order).getDeliveryTime());
+        }
+        String hh = String.valueOf(max/60);
+        System.out.println(max+" "+max/60+" "+max%60);
+        String mm = String.valueOf(max%60);
+        String time = hh+"HH:"+mm+"MM";
+        return  time;
     }
     public void deletePartnerById(String partnerId){
+        for(String order : pairs.get(partnerId)){
+            paired.remove(order);
+        }
         pairs.remove(partnerId);
         partners.remove(partnerId);
+
     }
     public void deleteOrderById(String orderId){
         for(String id : pairs.keySet()){
